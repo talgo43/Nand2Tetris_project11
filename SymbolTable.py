@@ -13,18 +13,24 @@ class SymbolTable:
     compilation: type, kind and running index. The symbol table has two nested
     scopes (class/subroutine).
     """
+    CLASS_KIND = ["static", "field"]
 
     def __init__(self) -> None:
         """Creates a new empty symbol table."""
-        # Your code goes here!
-        pass
+        self.class_symbols = dict()
+        self.subroutine_symbols = dict()
+
+    def get_symbol_table(self, kind):
+        current_dict = self.subroutine_symbols
+        if kind in SymbolTable.CLASS_KIND:
+            current_dict = self.class_symbols
+        return current_dict
 
     def start_subroutine(self) -> None:
         """Starts a new subroutine scope (i.e., resets the subroutine's 
         symbol table).
         """
-        # Your code goes here!
-        pass
+        self.subroutine_symbols.clear()
 
     def define(self, name: str, type: str, kind: str) -> None:
         """Defines a new identifier of a given name, type and kind and assigns 
@@ -37,8 +43,8 @@ class SymbolTable:
             kind (str): the kind of the new identifier, can be:
             "STATIC", "FIELD", "ARG", "VAR".
         """
-        # Your code goes here!
-        pass
+        current_dict = self.get_symbol_table(kind)
+        current_dict[name] = (type, kind, self.var_count(kind))
 
     def var_count(self, kind: str) -> int:
         """
@@ -49,8 +55,12 @@ class SymbolTable:
             int: the number of variables of the given kind already defined in 
             the current scope.
         """
-        # Your code goes here!
-        pass
+        current_dict = self.get_symbol_table(kind)
+        counter = 0
+        for s_type, s_kind, s_i in current_dict.values():
+            if s_kind == kind:
+                counter += 1
+        return counter
 
     def kind_of(self, name: str) -> str:
         """
@@ -61,8 +71,10 @@ class SymbolTable:
             str: the kind of the named identifier in the current scope, or None
             if the identifier is unknown in the current scope.
         """
-        # Your code goes here!
-        pass
+        if name in self.class_symbols.keys():
+            return self.class_symbols[name][1]
+        else:
+            return self.subroutine_symbols[name][1]
 
     def type_of(self, name: str) -> str:
         """
@@ -72,8 +84,10 @@ class SymbolTable:
         Returns:
             str: the type of the named identifier in the current scope.
         """
-        # Your code goes here!
-        pass
+        if name in self.class_symbols.keys():
+            return self.class_symbols[name][0]
+        else:
+            return self.subroutine_symbols[name][0]
 
     def index_of(self, name: str) -> int:
         """
@@ -83,5 +97,8 @@ class SymbolTable:
         Returns:
             int: the index assigned to the named identifier.
         """
-        # Your code goes here!
-        pass
+        if name in self.class_symbols.keys():
+            return self.class_symbols[name][2]
+        else:
+            return self.subroutine_symbols[name][2]
+
