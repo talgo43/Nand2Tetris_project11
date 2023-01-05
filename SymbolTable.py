@@ -102,3 +102,6 @@ class SymbolTable:
         else:
             return self.subroutine_symbols[name][2]
 
+    def contains(self, name: str) -> bool:
+        return (name in self.class_symbols.keys()) or (name in self.subroutine_symbols.keys())
+
