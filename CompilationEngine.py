@@ -156,7 +156,7 @@ class CompilationEngine:
 
     def compile_var_dec(self) -> None:
         """Compiles a var declaration."""
-        if self.input_stream.token_type == "KEYWORD" and self.input_stream.keyword() == "var":
+        while self.input_stream.token_type() == "KEYWORD" and self.input_stream.keyword() == "var":
             self.input_stream.advance()
             var_type = self.input_stream.keyword()
             self.input_stream.advance()
@@ -359,9 +359,10 @@ class CompilationEngine:
                 self.input_stream.advance()
 
             elif self.input_stream.symbol() in UNARY_OP:
+                op = self.input_stream.symbol()
                 self.input_stream.advance()
                 self.compile_term()  # todo: check if its good
-                self.vm_writer.write_arithmetic(UNARY_OP[self.input_stream.symbol()])
+                self.vm_writer.write_arithmetic(UNARY_OP[op])
 
     def compile_expression_list(self) -> int:
         """Compiles a (possibly empty) comma-separated list of expressions."""
