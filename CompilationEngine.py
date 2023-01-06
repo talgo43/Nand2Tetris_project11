@@ -30,9 +30,10 @@ class CompilationEngine:
         self.input_stream = input_stream
         self.input_stream.advance()
         self.symbol_table = SymbolTable()
-        self.compile_class()
-        self.class_name = ""
         self.label_counter = 0
+        self.class_name = ""
+        self.compile_class()
+
 
     def compile_class(self) -> None:
         """Compiles a complete class."""
@@ -99,17 +100,21 @@ class CompilationEngine:
         self.symbol_table.start_subroutine()
 
         # add arguments list
+        self.input_stream.advance()
+        self.input_stream.advance()
         self.compile_parameter_list()
 
         # add local parameters
+        self.input_stream.advance()
+        self.input_stream.advance()
         self.compile_var_dec()
-        self.input_stream.advance()
-        self.input_stream.advance()
+        # self.input_stream.advance()
 
         self.vm_writer.write_function(f"{self.class_name}.{subroutine_name}",
-                                      self.symbol_table.var_count("var"))
+                                      self.symbol_table.var_count("local"))
 
         self.compile_body(subroutine_keyword)
+        self.input_stream.advance()
 
     def compile_body(self, subroutine_keyword):
         # compile beginning
@@ -124,7 +129,7 @@ class CompilationEngine:
         # compile middle
         while not (self.input_stream.token_type() == "SYMBOL" and self.input_stream.symbol() == '}'):
             self.compile_statements()
-            self.input_stream.advance()
+            # self.input_stream.advance()
 
         # compile ending
         if subroutine_keyword == "constructor":
@@ -139,14 +144,14 @@ class CompilationEngine:
             param_type = self.compile_type()
             param_name = self.input_stream.identifier()
             self.input_stream.advance()
-            self.symbol_table.define(param_name, param_type, "arg")
+            self.symbol_table.define(param_name, param_type, "argument")
 
             while self.input_stream.token_type() == "SYMBOL" and \
                     self.input_stream.symbol() == ',':
                 self.input_stream.advance()
                 param_type = self.compile_type()
                 param_name = self.input_stream.identifier()
-                self.symbol_table.define(param_name, param_type, "arg")
+                self.symbol_table.define(param_name, param_type, "argument")
                 self.input_stream.advance()
 
     def compile_var_dec(self) -> None:
@@ -156,15 +161,16 @@ class CompilationEngine:
             var_type = self.input_stream.keyword()
             self.input_stream.advance()
             var_name = self.input_stream.identifier()
-            self.symbol_table.define(var_name, var_type, "var")
+            self.symbol_table.define(var_name, var_type, "local")
             self.input_stream.advance()
-            while self.input_stream.token_type == "SYMBOL" and self.input_stream.symbol() == ",":
+            while self.input_stream.token_type() == "SYMBOL" and self.input_stream.symbol() == ",":
                 self.input_stream.advance()
-                var_type = self.input_stream.keyword()
-                self.input_stream.advance()
+                # var_type = self.input_stream.keyword()
+                # self.input_stream.advance()
                 var_name = self.input_stream.identifier()
-                self.symbol_table.define(var_name, var_type, "var")
+                self.symbol_table.define(var_name, var_type, "local")
                 self.input_stream.advance()
+            self.input_stream.advance()
 
     def compile_statements(self) -> None:
         """Compiles a sequence of statements, not including the enclosing
@@ -188,6 +194,7 @@ class CompilationEngine:
         """Compiles a do statement."""
         self.input_stream.advance()
         self.compile_subroutine_call()
+        self.vm_writer.write_pop("TEMP", 0)
         self.input_stream.advance()
 
     def compile_let(self) -> None:
@@ -221,6 +228,7 @@ class CompilationEngine:
             self.input_stream.advance()
             self.vm_writer.write_pop(self.symbol_table.kind_of(var_name), self.symbol_table.index_of(var_name))
 
+
     def compile_while(self) -> None:
         """Compiles a while statement."""
 
@@ -248,7 +256,6 @@ class CompilationEngine:
             self.compile_expression()
         else:
             self.vm_writer.write_push("CONSTANT", 0)
-            self.vm_writer.write_pop("TEMP", 0)
 
         self.input_stream.advance()
         self.vm_writer.write_return()

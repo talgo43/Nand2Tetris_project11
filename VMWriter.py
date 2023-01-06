@@ -49,10 +49,9 @@ class VMWriter:
         """
         ARI_DICT = {"*": "call Math.multiply 2", "/": "call Math.divide 2"}
         if command in ARI_DICT.keys():
-            self.output_stream.write(ARI_DICT[command]+"\n")
+            self.output_stream.write(ARI_DICT[command] + "\n")
         else:
-            self.output_stream.write(command.lower()+"\n")
-
+            self.output_stream.write(command.lower() + "\n")
 
     def write_label(self, label: str) -> None:
         """Writes a VM label command.
