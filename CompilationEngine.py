@@ -34,7 +34,6 @@ class CompilationEngine:
         self.class_name = ""
         self.compile_class()
 
-
     def compile_class(self) -> None:
         """Compiles a complete class."""
         # Your code goes here!
@@ -61,14 +60,14 @@ class CompilationEngine:
         name = self.input_stream.identifier()
         self.input_stream.advance()
 
-        self.symbol_table.define(name, var_type, kind)
+        self.symbol_table.define(name, var_type, "this")
 
         while self.input_stream.token_type() == "SYMBOL" and \
                 self.input_stream.symbol() == ',':
             self.input_stream.advance()
             name = self.input_stream.identifier()
             self.input_stream.advance()
-            self.symbol_table.define(name, var_type, kind)
+            self.symbol_table.define(name, var_type, "this")
 
         self.input_stream.advance()
 
@@ -119,7 +118,7 @@ class CompilationEngine:
     def compile_body(self, subroutine_keyword):
         # compile beginning
         if subroutine_keyword == "constructor":
-            self.vm_writer.write_push("constant", self.symbol_table.var_count("field"))
+            self.vm_writer.write_push("constant", self.symbol_table.var_count("this"))
             self.vm_writer.write_call("Memory.alloc", 1)
             self.vm_writer.write_pop("pointer", 0)
         elif subroutine_keyword == "method":
@@ -132,9 +131,9 @@ class CompilationEngine:
             # self.input_stream.advance()
 
         # compile ending
-        if subroutine_keyword == "constructor":
-            self.vm_writer.write_push("pointer", 0)
-            self.vm_writer.write_return()
+        #if subroutine_keyword == "constructor":
+        #    self.vm_writer.write_push("pointer", 0)
+        #    self.vm_writer.write_return()
 
     def compile_parameter_list(self):
         """Compiles a (possibly empty) parameter list, not including the
@@ -228,23 +227,21 @@ class CompilationEngine:
             self.input_stream.advance()
             self.vm_writer.write_pop(self.symbol_table.kind_of(var_name), self.symbol_table.index_of(var_name))
 
-
     def compile_while(self) -> None:
         """Compiles a while statement."""
-
-        self.input_stream.advance()
-        self.input_stream.advance()
-        self.vm_writer.write_label(f"WHILE_EXP{self.label_counter}")
+        while_index = self.label_counter
         self.label_counter += 1
+        self.input_stream.advance()
+        self.input_stream.advance()
+        self.vm_writer.write_label(f"WHILE_EXP{while_index}")
         self.compile_expression()
         self.vm_writer.write_arithmetic("NOT")
-        self.vm_writer.write_if(f"L{self.label_counter}")  # its the original counter + 1
+        self.vm_writer.write_if(f"WHILE_END{while_index}")  # its the original counter + 1
         self.input_stream.advance()
         self.input_stream.advance()
         self.compile_statements()
-        self.vm_writer.write_goto(f"L{self.label_counter - 1}")
-        self.vm_writer.write_label(f"L{self.label_counter}")
-        self.label_counter += 1
+        self.vm_writer.write_goto(f"WHILE_EXP{while_index}")
+        self.vm_writer.write_label(f"WHILE_END{while_index}")
         self.input_stream.advance()
 
     def compile_return(self) -> None:
@@ -262,18 +259,19 @@ class CompilationEngine:
 
     def compile_if(self) -> None:
         """Compiles a if statement, possibly with a trailing else clause."""
+        if_index = self.label_counter
+        self.label_counter += 1
         self.input_stream.advance()
         self.input_stream.advance()
         self.compile_expression()
         self.vm_writer.write_arithmetic("NOT")
         self.input_stream.advance()
         self.input_stream.advance()
-        self.vm_writer.write_goto(f"L{self.label_counter}")
-        self.compile_statements()
-        self.vm_writer.write_goto(f"L{self.label_counter + 1}")
+        self.vm_writer.write_if(f"IF_FALSE{if_index}")
 
-        self.vm_writer.write_label(f"L{self.label_counter}")  # L1
-        self.label_counter += 1
+        self.compile_statements()
+        self.vm_writer.write_goto(f"IF_END{if_index}")
+        self.vm_writer.write_label(f"IF_FALSE{if_index}")  # L1
         self.input_stream.advance()
 
         if self.input_stream.token_type() == "KEYWORD" and \
@@ -284,8 +282,7 @@ class CompilationEngine:
             self.compile_statements()
             self.input_stream.advance()
 
-        self.vm_writer.write_label(f"L{self.label_counter}")  # L2 [FOR THE ELSE\NOTHING]
-        self.label_counter += 1
+        self.vm_writer.write_label(f"IF_END{if_index}")  # L2 [FOR THE ELSE\NOTHING]
 
     def compile_expression(self) -> None:
         """Compiles an expression."""
@@ -396,10 +393,12 @@ class CompilationEngine:
             self.input_stream.advance()
             function_name = function_name + f'.{second_part_name}'
 
-        if self.symbol_table.contains(first_part_name):  # method
-            self.vm_writer.write_push(
-                self.symbol_table.kind_of(first_part_name), self.symbol_table.index_of(first_part_name))
-            function_name = f"{self.symbol_table.type_of(first_part_name)}.{second_part_name}"
+        if self.symbol_table.contains(first_part_name) or "." not in function_name:  # method
+            self.vm_writer.write_push("pointer", 0)
+            if "." not in function_name:
+                function_name = f"{self.class_name}.{function_name}"
+            else:
+                function_name = f"{self.symbol_table.type_of(first_part_name)}.{second_part_name}"
             param_amount += 1
 
         self.input_stream.advance()

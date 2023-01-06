@@ -13,7 +13,7 @@ class SymbolTable:
     compilation: type, kind and running index. The symbol table has two nested
     scopes (class/subroutine).
     """
-    CLASS_KIND = ["static", "field"]
+    CLASS_KIND = ["static", "this"]
 
     def __init__(self) -> None:
         """Creates a new empty symbol table."""
