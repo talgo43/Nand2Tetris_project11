@@ -234,10 +234,10 @@ class CompilationEngine:
 
         self.input_stream.advance()
         self.input_stream.advance()
-        self.vm_writer.write_label(f"L{self.label_counter}")
+        self.vm_writer.write_label(f"WHILE_EXP{self.label_counter}")
         self.label_counter += 1
         self.compile_expression()
-        self.vm_writer.write_arithmetic("NEG")
+        self.vm_writer.write_arithmetic("NOT")
         self.vm_writer.write_if(f"L{self.label_counter}")  # its the original counter + 1
         self.input_stream.advance()
         self.input_stream.advance()
@@ -265,7 +265,7 @@ class CompilationEngine:
         self.input_stream.advance()
         self.input_stream.advance()
         self.compile_expression()
-        self.vm_writer.write_arithmetic("NEG")
+        self.vm_writer.write_arithmetic("NOT")
         self.input_stream.advance()
         self.input_stream.advance()
         self.vm_writer.write_goto(f"L{self.label_counter}")
@@ -328,11 +328,11 @@ class CompilationEngine:
 
         elif self.input_stream.token_type() == "KEYWORD" and \
                 self.input_stream.keyword() in KEYWORD_CONSTANT:
-            if self.input_stream.token_type() in ['false', 'null']:
+            if self.input_stream.keyword() in ['false', 'null']:
                 self.vm_writer.write_push("CONSTANT", 0)
-            elif self.input_stream.token_type() == 'true':
-                self.vm_writer.write_push("CONSTANT", 1)
-                self.vm_writer.write_arithmetic("NEG")
+            elif self.input_stream.keyword() == 'true':
+                self.vm_writer.write_push("CONSTANT", 0)
+                self.vm_writer.write_arithmetic("NOT")
             else:
                 self.vm_writer.write_push("POINTER", 0)
             self.input_stream.advance()
@@ -351,6 +351,9 @@ class CompilationEngine:
                     self.compile_subroutine_call(var_name)
                 elif self.input_stream.symbol() == '.':
                     self.compile_subroutine_call(var_name)  # todo: check if its good
+                else:
+                    # todo: check if its good
+                    self.vm_writer.write_push(self.symbol_table.kind_of(var_name), self.symbol_table.index_of(var_name))
 
         elif self.input_stream.token_type() == "SYMBOL":
             if self.input_stream.symbol() == '(':
