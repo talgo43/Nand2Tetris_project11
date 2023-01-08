@@ -13,7 +13,7 @@ class SymbolTable:
     compilation: type, kind and running index. The symbol table has two nested
     scopes (class/subroutine).
     """
-    CLASS_KIND = ["static", "this"]
+    SUB_KIND = ["local", "argument"]
 
     def __init__(self) -> None:
         """Creates a new empty symbol table."""
@@ -22,7 +22,7 @@ class SymbolTable:
 
     def get_symbol_table(self, kind):
         current_dict = self.subroutine_symbols
-        if kind in SymbolTable.CLASS_KIND:
+        if kind not in SymbolTable.SUB_KIND:
             current_dict = self.class_symbols
         return current_dict
 
@@ -75,10 +75,10 @@ class SymbolTable:
             str: the kind of the named identifier in the current scope, or None
             if the identifier is unknown in the current scope.
         """
-        if name in self.class_symbols.keys():
-            return self.class_symbols[name][1]
-        else:
+        if name in self.subroutine_symbols.keys():
             return self.subroutine_symbols[name][1]
+        else:
+            return self.class_symbols[name][1]
 
     def type_of(self, name: str) -> str:
         """
@@ -101,10 +101,10 @@ class SymbolTable:
         Returns:
             int: the index assigned to the named identifier.
         """
-        if name in self.class_symbols.keys():
-            return self.class_symbols[name][2]
-        else:
+        if name in self.subroutine_symbols.keys():
             return self.subroutine_symbols[name][2]
+        else:
+            return self.class_symbols[name][2]
 
     def contains(self, name: str) -> bool:
         return (name in self.class_symbols.keys()) or (name in self.subroutine_symbols.keys())

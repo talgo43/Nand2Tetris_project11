@@ -308,7 +308,6 @@ class CompilationEngine:
 
         KEYWORD_CONSTANT = ['true', 'false', 'null', 'this']
         UNARY_OP = {'-': "NEG", '~': "NOT", '^': "SHIFTLEFT", '#': "SHIFTRIGHT"}
-
         if self.input_stream.token_type() == "INT_CONST":
             self.vm_writer.write_push("CONSTANT", self.input_stream.int_val())
             self.input_stream.advance()
