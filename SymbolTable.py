@@ -32,19 +32,23 @@ class SymbolTable:
         """
         self.subroutine_symbols.clear()
 
-    def define(self, name: str, type: str, kind: str) -> None:
+    def define(self, name: str, type: str, kind: str, is_method=False) -> None:
         """Defines a new identifier of a given name, type and kind and assigns 
         it a running index. "STATIC" and "FIELD" identifiers have a class scope, 
         while "ARG" and "VAR" identifiers have a subroutine scope.
 
         Args:
+            is_method:
             name (str): the name of the new identifier.
             type (str): the type of the new identifier.
             kind (str): the kind of the new identifier, can be:
             "STATIC", "FIELD", "ARG", "VAR".
         """
         current_dict = self.get_symbol_table(kind)
-        current_dict[name] = (type, kind, self.var_count(kind))
+        index = self.var_count(kind)
+        if is_method and kind == "argument":
+            index += 1
+        current_dict[name] = (type, kind, index)
 
     def var_count(self, kind: str) -> int:
         """
@@ -104,4 +108,3 @@ class SymbolTable:
 
     def contains(self, name: str) -> bool:
         return (name in self.class_symbols.keys()) or (name in self.subroutine_symbols.keys())
-

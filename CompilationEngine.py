@@ -60,14 +60,18 @@ class CompilationEngine:
         name = self.input_stream.identifier()
         self.input_stream.advance()
 
-        self.symbol_table.define(name, var_type, "this")
+        if kind == "field":
+            kind = "this"
+        self.symbol_table.define(name, var_type, kind)
 
         while self.input_stream.token_type() == "SYMBOL" and \
                 self.input_stream.symbol() == ',':
             self.input_stream.advance()
             name = self.input_stream.identifier()
             self.input_stream.advance()
-            self.symbol_table.define(name, var_type, "this")
+            if kind == "field":
+                kind = "this"
+            self.symbol_table.define(name, var_type, kind)
 
         self.input_stream.advance()
 
@@ -101,7 +105,7 @@ class CompilationEngine:
         # add arguments list
         self.input_stream.advance()
         self.input_stream.advance()
-        self.compile_parameter_list()
+        self.compile_parameter_list(subroutine_keyword)
 
         # add local parameters
         self.input_stream.advance()
@@ -129,23 +133,23 @@ class CompilationEngine:
         while not (self.input_stream.token_type() == "SYMBOL" and self.input_stream.symbol() == '}'):
             self.compile_statements()
 
-
-    def compile_parameter_list(self):
+    def compile_parameter_list(self, subroutine_keyword):
         """Compiles a (possibly empty) parameter list, not including the
         enclosing "()".
         """
+        is_method = (subroutine_keyword == "method")
         if not (self.input_stream.token_type() == "SYMBOL" and self.input_stream.symbol() == ')'):  # NOT )
             param_type = self.compile_type()
             param_name = self.input_stream.identifier()
             self.input_stream.advance()
-            self.symbol_table.define(param_name, param_type, "argument")
+            self.symbol_table.define(param_name, param_type, "argument", is_method)
 
             while self.input_stream.token_type() == "SYMBOL" and \
                     self.input_stream.symbol() == ',':
                 self.input_stream.advance()
                 param_type = self.compile_type()
                 param_name = self.input_stream.identifier()
-                self.symbol_table.define(param_name, param_type, "argument")
+                self.symbol_table.define(param_name, param_type, "argument", is_method)
                 self.input_stream.advance()
 
     def compile_var_dec(self) -> None:
