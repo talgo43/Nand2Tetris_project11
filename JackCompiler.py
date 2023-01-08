@@ -48,7 +48,7 @@ if "__main__" == __name__:
         filename, extension = os.path.splitext(input_path)
         if extension.lower() != ".jack":
             continue
-        output_path = filename + ".vm"
+        output_path = filename + "Our" + ".vm"
         with open(input_path, 'r') as input_file, \
                 open(output_path, 'w') as output_file:
             compile_file(input_file, output_file)

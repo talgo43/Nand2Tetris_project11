@@ -128,12 +128,7 @@ class CompilationEngine:
         # compile middle
         while not (self.input_stream.token_type() == "SYMBOL" and self.input_stream.symbol() == '}'):
             self.compile_statements()
-            # self.input_stream.advance()
 
-        # compile ending
-        #if subroutine_keyword == "constructor":
-        #    self.vm_writer.write_push("pointer", 0)
-        #    self.vm_writer.write_return()
 
     def compile_parameter_list(self):
         """Compiles a (possibly empty) parameter list, not including the
@@ -319,8 +314,8 @@ class CompilationEngine:
             self.vm_writer.write_push("CONSTANT", len(current_str))
             self.vm_writer.write_call("String.new", 1)
             for c in current_str:
-                self.vm_writer.write_push("CONSTANT", c)  # todo: check if it works with char
-                self.vm_writer.write_call("String.appendChar", 1)
+                self.vm_writer.write_push("CONSTANT", ord(c))  # todo: check if it works with char
+                self.vm_writer.write_call("String.appendChar", 2)
             self.input_stream.advance()
 
         elif self.input_stream.token_type() == "KEYWORD" and \
@@ -340,10 +335,14 @@ class CompilationEngine:
 
             if self.input_stream.token_type() == "SYMBOL":
                 if self.input_stream.symbol() == '[':
-
+                    self.vm_writer.write_push(self.symbol_table.kind_of(var_name),
+                                              self.symbol_table.index_of(var_name))
                     self.input_stream.advance()
                     self.compile_expression()
                     self.input_stream.advance()
+                    self.vm_writer.write_arithmetic("ADD")
+                    self.vm_writer.write_pop("pointer", 1)
+                    self.vm_writer.write_push("that", 0)
                 elif self.input_stream.symbol() == '(':
                     self.compile_subroutine_call(var_name)
                 elif self.input_stream.symbol() == '.':
@@ -394,11 +393,13 @@ class CompilationEngine:
             function_name = function_name + f'.{second_part_name}'
 
         if self.symbol_table.contains(first_part_name) or "." not in function_name:  # method
-            self.vm_writer.write_push("pointer", 0)
             if "." not in function_name:
                 function_name = f"{self.class_name}.{function_name}"
+                self.vm_writer.write_push("pointer", 0)
             else:
                 function_name = f"{self.symbol_table.type_of(first_part_name)}.{second_part_name}"
+                self.vm_writer.write_push(self.symbol_table.kind_of(first_part_name),
+                                          self.symbol_table.index_of(first_part_name))
             param_amount += 1
 
         self.input_stream.advance()
